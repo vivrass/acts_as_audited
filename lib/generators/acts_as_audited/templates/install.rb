@@ -9,7 +9,6 @@ class <%= migration_class_name %> < ActiveRecord::Migration
       t.column :user_type, :string
       t.column :username, :string
       t.column :action, :string
-      t.column :audited_changes, :text
       t.column :version, :integer, :default => 0
       t.column :comment, :string
       t.column :remote_address, :string
@@ -20,6 +19,17 @@ class <%= migration_class_name %> < ActiveRecord::Migration
     add_index :audits, [:associated_id, :associated_type], :name => 'associated_index'
     add_index :audits, [:user_id, :user_type], :name => 'user_index'
     add_index :audits, :created_at
+
+    create_table :audit_changes, :force => true do |t|
+      t.column :audit_id, :integer
+      t.column :type, :string, :nil => false
+      t.column :attribute_name, :string
+      t.column :old_value, :text
+      t.column :new_value, :text
+    end
+
+    add_index :audit_changes, [:audit_id], :name => 'audit_index'
+    add_index :audit_changes, [:attribute_name], :name => 'audit_changes_field_index'
   end
 
   def self.down

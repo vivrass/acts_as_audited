@@ -42,6 +42,7 @@ end
 
 require 'acts_as_audited/auditor'
 require 'acts_as_audited/audit'
+require 'acts_as_audited/audit_change'
 
 ActiveRecord::Base.send :include, ActsAsAudited::Auditor
 

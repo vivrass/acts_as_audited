@@ -5,7 +5,7 @@ require 'set'
 # * <tt>auditable</tt>: the ActiveRecord model that was changed
 # * <tt>user</tt>: the user that performed the change; a string or an ActiveRecord model
 # * <tt>action</tt>: one of create, update, or delete
-# * <tt>audited_changes</tt>: a serialized hash of all the changes
+# * <tt>audited_changes</tt>: a has_many association of all the changes
 # * <tt>comment</tt>: a comment set with the audit
 # * <tt>created_at</tt>: Time that the change was performed
 #
@@ -16,7 +16,7 @@ class Audit < ActiveRecord::Base
 
   before_create :set_version_number, :set_audit_user
 
-  serialize :audited_changes
+  has_many :audit_changes
 
   cattr_accessor :audited_class_names
   self.audited_class_names = Set.new
@@ -103,6 +103,24 @@ class Audit < ActiveRecord::Base
   def ancestors
     self.class.where(['auditable_id = ? and auditable_type = ? and version <= ?',
       auditable_id, auditable_type, version])
+  end
+
+  def audited_changes=(attrs)
+    attrs.each do |field, values|
+      if values.is_a?(Array)
+        old, new = *values
+        self.audit_changes << UpdateAuditChange.new(:audit => self, :attribute_name => field, :new_value => new, :old_value => old)
+      else
+        self.audit_changes << CreateAuditChange.new(:audit => self, :attribute_name => field, :new_value => values)
+      end
+    end
+  end
+
+  def audited_changes
+    self.audit_changes.inject({}.with_indifferent_access) do |hash, model|
+      hash[model.attribute_name] = model.to_value
+      hash
+    end
   end
 
   # Returns a hash of the changed attributes with the new values
