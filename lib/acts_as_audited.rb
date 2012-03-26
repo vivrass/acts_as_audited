@@ -19,6 +19,9 @@
 # OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 # WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+require 'acts_as_audited/audit'
+require 'acts_as_audited/audit_change'
+
 module CollectiveIdea #:nodoc:
   module Acts #:nodoc:
     # Specify this act if you want changes to your model to be saved in an
@@ -144,7 +147,7 @@ module CollectiveIdea #:nodoc:
       protected
 
         def revision_with(attributes)
-          returning self.dup do |revision|
+          self.dup.tap do |revision|
             revision.send :instance_variable_set, '@attributes', self.attributes_before_type_cast
             Audit.assign_revision_attributes(revision, attributes)
 
@@ -218,7 +221,7 @@ module CollectiveIdea #:nodoc:
         def without_auditing(&block)
           auditing_was_enabled = auditing_enabled
           disable_auditing
-          returning(block.call) { enable_auditing if auditing_was_enabled }
+          block.call.tap { enable_auditing if auditing_was_enabled }
         end
 
         def disable_auditing
@@ -240,3 +243,5 @@ module CollectiveIdea #:nodoc:
     end
   end
 end
+
+ActiveRecord::Base.send :include, CollectiveIdea::Acts::Audited

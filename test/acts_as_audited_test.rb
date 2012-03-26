@@ -21,10 +21,14 @@ module CollectiveIdea
         create_user.audits.first.changes.keys.any?{|col| ['created_at', 'updated_at', 'password'].include? col}.should be(false)
       end
       
+      should 'create audit on create' do
+        old_count = Audit.count
+        @user = create_user
+        Audit.count.should == old_count + 1
+      end
+
       context "on create" do
         setup { @user = create_user }
-
-        should_change 'Audit.count', :by => 1
 
         should 'create associated audit' do
           @user.audits.count.should == 1
